@@ -60,7 +60,7 @@ module axi4_lite_slave (
             w_received      <= 1'b0;
         end
         else begin
-            if (S_AXI_AWVALID && !aw_received) begin
+            if (S_AXI_AWVALID && !aw_received && !bvalid_reg) begin
                 awready_reg     <= 1'b1;
                 captured_awaddr <= S_AXI_AWADDR;
                 aw_received     <= 1'b1;
@@ -68,7 +68,7 @@ module axi4_lite_slave (
                 awready_reg <= 1'b0;
             end
 
-            if (S_AXI_WVALID && !w_received) begin
+            if (S_AXI_WVALID && !w_received && !bvalid_reg) begin
                 wready_reg     <= 1'b1;
                 captured_wdata <= S_AXI_WDATA;
                 captured_wstrb <= S_AXI_WSTRB;
