@@ -34,24 +34,147 @@ module tb_top;
     environment env;
 
     initial begin
+
         env = new(dut_if, dut_if);
         env.build();
+        env.run();
 
-        $dumpfile("axi4_lite_tb.vcd");
+        $dumpfile("axi4_lite_tb.vcd");  
         $dumpvars(0, tb_top);
 
-        // Reset
         dut_if.aresetn = 1'b0;
         repeat(5) @(posedge clk);
         dut_if.aresetn = 1'b1;
         repeat(2) @(posedge clk);
 
-        env.run_components();
-        env.gen.run();
-        #2000;
+        begin
+            transaction tx;
 
+            tx = new();
+            tx.txn_type     = transaction::WRITE;
+            tx.waddr        = 32'h00000000;
+            tx.wdata        = 32'hDEADBEEF;
+            tx.wstrb        = 4'b1111;
+            tx.aw_delay     = 0;
+            tx.w_delay      = 0;
+            tx.bready_delay = 0;
+            env.seqr.send(tx);
+
+            tx = new();
+            tx.txn_type     = transaction::READ;
+            tx.waddr        = 32'h00000000;
+            tx.aw_delay     = 0;
+            tx.rready_delay = 0;
+            env.seqr.send(tx);
+
+            tx = new();
+            tx.txn_type     = transaction::WRITE;
+            tx.waddr        = 32'h00000008;
+            tx.wdata        = 32'hCAFEBABE;
+            tx.wstrb        = 4'b1111;
+            tx.aw_delay     = 0;
+            tx.w_delay      = 0;
+            tx.bready_delay = 0;
+            env.seqr.send(tx);
+
+            tx = new();
+            tx.txn_type     = transaction::READ;
+            tx.waddr        = 32'h00000008;
+            tx.aw_delay     = 0;
+            tx.rready_delay = 0;
+            env.seqr.send(tx);
+        end
+
+        begin
+            transaction tx;
+
+            tx = new();
+            tx.txn_type     = transaction::WRITE;
+            tx.waddr        = 32'h00000004;
+            tx.wdata        = 32'hFFFFFFFF;
+            tx.wstrb        = 4'b1111;
+            tx.aw_delay     = 0;
+            tx.w_delay      = 0;
+            tx.bready_delay = 0;
+            env.seqr.send(tx);
+
+            tx = new();
+            tx.txn_type     = transaction::READ;
+            tx.waddr        = 32'h00000004;
+            tx.aw_delay     = 0;
+            tx.rready_delay = 0;
+            env.seqr.send(tx);
+        end
+
+        begin
+            transaction tx;
+            tx = new();
+            tx.txn_type     = transaction::WRITE;
+            tx.waddr        = 32'h00000000;
+            tx.wdata        = 32'h11223344;
+            tx.wstrb        = 4'b1111;
+            tx.aw_delay     = 10;
+            tx.w_delay      = 0;
+            tx.bready_delay = 0;
+            env.seqr.send(tx);
+        end
+
+        begin
+            transaction tx;
+            tx = new();
+            tx.txn_type     = transaction::WRITE;
+            tx.waddr        = 32'h00000000;
+            tx.wdata        = 32'hAABBCCDD;
+            tx.wstrb        = 4'b1111;
+            tx.aw_delay     = 0;
+            tx.w_delay      = 0;
+            tx.bready_delay = 20;
+            env.seqr.send(tx);
+        end
+
+        begin
+            transaction tx;
+
+            tx = new();
+            tx.txn_type     = transaction::WRITE;
+            tx.waddr        = 32'h00000000;
+            tx.wdata        = 32'hFFFFFFFF;
+            tx.wstrb        = 4'b1111;
+            tx.aw_delay     = 0;
+            tx.w_delay      = 0;
+            tx.bready_delay = 0;
+            env.seqr.send(tx);
+
+            tx = new();
+            tx.txn_type     = transaction::WRITE;
+            tx.waddr        = 32'h00000000;
+            tx.wdata        = 32'h00000000;
+            tx.wstrb        = 4'b0101;
+            tx.aw_delay     = 0;
+            tx.w_delay      = 0;
+            tx.bready_delay = 0;
+            env.seqr.send(tx);
+
+            tx = new();
+            tx.txn_type     = transaction::READ;
+            tx.waddr        = 32'h00000000;
+            tx.aw_delay     = 0;
+            tx.rready_delay = 0;
+            env.seqr.send(tx);
+        end
+
+        begin
+            transaction tx;
+            repeat(20) begin
+                tx = new();
+                tx.randomize();
+                env.seqr.send(tx);
+            end
+        end
+
+        #2000;
         env.wrap_up();
         $finish;
-    end
 
+    end
 endmodule
