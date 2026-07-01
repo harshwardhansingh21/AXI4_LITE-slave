@@ -22,10 +22,9 @@ axi4-lite-slave/
 │   └── axi4_lite_slave.v        # DUT
 ├── tb/
 │   ├── transaction.sv           # Stimulus packet class
-│   ├── generator.sv             # Constrained-random stimulus generator
+│   ├── sequencer.sv             # send stimulus to driver in proper sequnece
 │   ├── driver.sv                # Drives transactions to DUT via interface
-│   ├── monitor_in.sv            # Captures input-side activity
-│   ├── monitor_out.sv           # Captures output-side activity
+│   ├── monitor.sv               # captures signals from dut
 │   ├── scoreboard.sv            # Checks write/read data integrity
 │   ├── environment.sv           # Connects all components
 │   ├── axi4_lite_if.sv          # Interface definition
@@ -42,7 +41,7 @@ The testbench follows a class-based, constrained-random verification (CRV) metho
 | Component | Responsibility |
 |---|---|
 | Transaction | Defines the stimulus packet (address, data, control signals) |
-| Generator | Produces constrained-random transactions |
+| Sequencer |send stimulus to driver in proper sequnece |
 | Driver | Drives transactions onto the DUT interface |
 | Monitor  |  observes input and output interface activity |
 | Scoreboard | Compares expected vs. actual data to check correctness |
@@ -69,6 +68,6 @@ During simulation, the constrained-random environment surfaced a real **BVALID p
 
 ## Author
 
-Harshwardhan Singh (Harshuu)
+Harshwardhan Singh 
 B.Tech ECE, BIT Mesra | RTL Design & Verification
-[LinkedIn] · [GitHub]
+
