@@ -1,13 +1,12 @@
-class sequencer;
+`ifndef  AXI_SEQUENCER_SV
+`define AXI_SEQUENCER_SV
 
-    mailbox #(transaction) tx_to_drv;
+class axi_sequencer extends uvm_sequencer#(axi_transaction);
+`uvm_component_utils(axi_sequencer)
 
-    function new(mailbox #(transaction) tx_to_drv);
-        this.tx_to_drv = tx_to_drv;
+    function new(string name="axi_sequencer",uvm_component parent=null);
+        super.new(name,parent);
     endfunction
 
-    task send(transaction tx);
-        tx_to_drv.put(tx);
-    endtask
-
 endclass
+`endif
