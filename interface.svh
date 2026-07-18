@@ -1,75 +1,60 @@
+`ifndef AXI_IF_SV
+`define AXI_IF_SV
 
-interface axi4_lite_if (input logic clk);
+interface axi_if (input logic clk);
 
-    logic        aresetn;
+  logic aresetn;
 
-    logic [31:0] awaddr;
-    logic        awvalid;
-    logic        awready;
+  // Write address channel
+  logic [31:0] awaddr;
+  logic        awvalid;
+  logic        awready;
 
-    logic [31:0] wdata;
-    logic [3:0]  wstrb;
-    logic        wvalid;
-    logic        wready;
+  // Write data channel
+  logic [31:0] wdata;
+  logic [3:0]  wstrb;
+  logic        wvalid;
+  logic        wready;
 
-    logic [1:0]  bresp;
-    logic        bvalid;
-    logic        bready;
+  // Write response channel
+  logic [1:0]  bresp;
+  logic        bvalid;
+  logic        bready;
 
-    logic [31:0] araddr;
-    logic        arvalid;
-    logic        arready;
+  // Read address channel
+  logic [31:0] araddr;
+  logic        arvalid;
+  logic        arready;
 
-    logic [31:0] rdata;
-    logic [1:0]  rresp;
-    logic        rvalid;
-    logic        rready;
+  // Read data channel
+  logic [31:0] rdata;
+  logic [1:0]  rresp;
+  logic        rvalid;
+  logic        rready;
 
-    clocking driver_cb @(posedge clk);
-        default input #1 output #1;
-        output aresetn;
-        output awaddr;
-        output awvalid;
-        input  awready;
-        output wdata;
-        output wstrb;
-        output wvalid;
-        input  wready;
-        input  bresp;
-        input  bvalid;
-        output bready;
-        output araddr;
-        output arvalid;
-        input  arready;
-        input  rdata;
-        input  rresp;
-        input  rvalid;
-        output rready;
-    endclocking
+  modport DRIVER (
+    input  clk, aresetn,
+    output awaddr, awvalid,
+    input  awready,
+    output wdata, wstrb, wvalid,
+    input  wready,
+    input  bresp, bvalid,
+    output bready,
+    output araddr, arvalid,
+    input  arready,
+    input  rdata, rresp, rvalid,
+    output rready
+  );
 
-    clocking monitor_cb @(posedge clk);
-        default input #1 output #1;
-        input aresetn;
-        input awaddr;
-        input awvalid;
-        input awready;
-        input wdata;
-        input wstrb;
-        input wvalid;
-        input wready;
-        input bresp;
-        input bvalid;
-        input bready;
-        input araddr;
-        input arvalid;
-        input arready;
-        input rdata;
-        input rresp;
-        input rvalid;
-        input rready;
-    endclocking
-
-    modport DRIVER  (clocking driver_cb,  input clk);
-    modport MONITOR (clocking monitor_cb, input clk);
+  modport MONITOR (
+    input clk, aresetn,
+    input awaddr, awvalid, awready,
+    input wdata, wstrb, wvalid, wready,
+    input bresp, bvalid, bready,
+    input araddr, arvalid, arready,
+    input rdata, rresp, rvalid, rready
+  );
 
 endinterface
+
+`endif
