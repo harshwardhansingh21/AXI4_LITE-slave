@@ -1,59 +1,85 @@
-class monitor;
+`ifndef AXI_MONITOR_SV
+`define AXI_MONITOR_SV
 
-    virtual axi4_lite_if.MONITOR vif;
-    mailbox #(transaction) mon_to_scb;
+class axi_monitor extends uvm_monitor;
 
-    function new(virtual axi4_lite_if.MONITOR vif,
-                 mailbox #(transaction) mon_to_scb);
-        this.vif        = vif;
-        this.mon_to_scb = mon_to_scb;
-    endfunction
+  `uvm_component_utils(axi_monitor)
 
-    task run();
-        fork
-            monitor_write();
-            monitor_read();
-        join_none
-    endtask
+  virtual axi_if vif;
+  uvm_analysis_port #(axi_transaction) ap;
 
-    task monitor_write();
+  function new(string name = "axi_monitor", uvm_component parent = null);
+    super.new(name, parent);
+    ap = new("ap", this);
+  endfunction
+
+  virtual function void build_phase(uvm_phase phase);
+    super.build_phase(phase);
+    if (!uvm_config_db#(virtual axi_if)::get(this, "", "vif", vif))
+      `uvm_fatal(get_type_name(), "Virtual interface not set for monitor - check config_db path (uvm_test_top* wildcard)")
+  endfunction
+
+  virtual task run_phase(uvm_phase phase);
+    wait (vif.aresetn == 1'b1);
+
+    fork
+      monitor_write();
+      monitor_read();
+    join
+  endtask
+
+  //---------------------------------------------------
+  // Watch write channel: capture AW+W address/data,
+  // then wait for B response, then broadcast full txn
+  //---------------------------------------------------
+  virtual task monitor_write();
+    axi_transaction tr;
     forever begin
-        transaction tx = new();
+      @(posedge vif.clk);
+      if (vif.awvalid && vif.awready) begin
+        tr = axi_transaction::type_id::create("tr");
+        tr.op     = WRITE;
+        tr.awaddr = vif.awaddr;
 
-        @(vif.monitor_cb iff (vif.monitor_cb.awvalid &&
-                              vif.monitor_cb.awready));
-        tx.txn_type = transaction::WRITE;
-        tx.waddr    = vif.monitor_cb.awaddr;
-
-        @(vif.monitor_cb iff (vif.monitor_cb.wvalid &&
-                              vif.monitor_cb.wready));
-        tx.wdata = vif.monitor_cb.wdata;
-        tx.wstrb = vif.monitor_cb.wstrb;
-
-        mon_to_scb.put(tx);  
-
-        @(vif.monitor_cb iff (vif.monitor_cb.bvalid &&
-                              vif.monitor_cb.bready));
-        tx.response = vif.monitor_cb.bresp;
-    end
-endtask
-
-    task monitor_read();
-        forever begin
-            transaction tx = new();
-
-            @(vif.monitor_cb iff (vif.monitor_cb.arvalid &&
-                                  vif.monitor_cb.arready));
-            tx.txn_type = transaction::READ;
-            tx.waddr    = vif.monitor_cb.araddr;
-
-            @(vif.monitor_cb iff (vif.monitor_cb.rvalid &&
-                                  vif.monitor_cb.rready));
-            tx.rdata    = vif.monitor_cb.rdata;
-            tx.response = vif.monitor_cb.rresp;
-
-            mon_to_scb.put(tx);
+        // wait for W handshake (may already have happened same cycle or later)
+        if (!(vif.wvalid && vif.wready)) begin
+          do @(posedge vif.clk); while (!(vif.wvalid && vif.wready));
         end
-    endtask
+        tr.wdata = vif.wdata;
+        tr.wstrb = vif.wstrb;
+
+        // wait for B response
+        do @(posedge vif.clk); while (!(vif.bvalid && vif.bready));
+        tr.bresp = vif.bresp;
+
+        ap.write(tr);
+      end
+    end
+  endtask
+
+  //---------------------------------------------------
+  // Watch read channel: capture AR address,
+  // then wait for R response, then broadcast full txn
+  //---------------------------------------------------
+  virtual task monitor_read();
+    axi_transaction tr;
+    forever begin
+      @(posedge vif.clk);
+      if (vif.arvalid && vif.arready) begin
+        tr = axi_transaction::type_id::create("tr");
+        tr.op     = READ;
+        tr.araddr = vif.araddr;
+
+        // wait for R response
+        do @(posedge vif.clk); while (!(vif.rvalid && vif.rready));
+        tr.rdata = vif.rdata;
+        tr.rresp = vif.rresp;
+
+        ap.write(tr);
+      end
+    end
+  endtask
 
 endclass
+
+`endif
